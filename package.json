@@ -4,6 +4,8 @@
   "description": "]",
   "main": "index.js",
   "scripts": {
+    "start": "nodemon",
+    "start:production": "ts-node ./src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,9 +21,13 @@
   "dependencies": {
     "@slack/events-api": "^2.3.4",
     "@slack/web-api": "^5.11.0",
+    "@types/axios": "^0.14.0",
     "@types/express": "^4.17.7",
+    "@types/node": "^12.7.0",
+    "axios": "^0.20.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "nodemon": "^2.0.4",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.7"
   }
