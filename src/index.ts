@@ -1,14 +1,14 @@
-import { archiveChannel, getBotsInfo, BotMetaData } from './http-service';
+import { webClient } from './web-client';
 import { MessageEvent } from './slack-event';
-import { WebClient } from '@slack/web-api';
 import express from 'express';
 import { createEventAdapter } from '@slack/events-api';
+import { scheduleMessage, sendMessage } from './messages';
+import { addChannel, inviteUserToChannel } from './channel';
 
 require('dotenv').config();
 const slackSigningSecret = process.env.SIGNING_SECRET || '';
 
 const slackEvents = createEventAdapter(slackSigningSecret);
-const webCllient = new WebClient(process.env.BOT_TOKEN);
 
 const server = express();
 
@@ -23,27 +23,19 @@ function parseUserId(userTag: string) {
 slackEvents.on('message', async (event) => {
   const res = event as MessageEvent;
   console.log(event);
-  console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
+  const text = event.text as string;
   if(event.user !== botId) {
     try {
-      await webCllient.chat.postMessage({
-        token: process.env.BOT_TOKEN,
-        text: 'hello wrold',
-        channel: event.user
-      })
+      const userTag = text.split(' ').pop();
+      const userString = parseUserId(userTag!);
+      console.log(userTag);
+      await inviteUserToChannel('my-channel', userString);
     } catch(error) {
       console.error(error);
     }
-    
-  } else {
-    const userTag = event.text.split(' ').pop();
-    const userString = parseUserId(userTag!);
-    await webCllient.conversations.open({
-      token: process.env.BOT_TOKEN,
-      users: event.user, userString
-    })
   }
-});
+    
+  });
 
 slackEvents.on('app_mention', async (event) => {
   const channel = event.channel as string;
@@ -54,13 +46,13 @@ slackEvents.on('app_mention', async (event) => {
     if (event.channel_type !== 'im') {
       console.log('in the if');
       
-      const res = await webCllient.channels.archive({
+      const res = await webClient.channels.archive({
         channel,
         token: process.env.BOT_TOKEN
       })
       
       if(!res.ok) {
-        await webCllient.chat.postMessage({
+        await webClient.chat.postMessage({
           token: process.env.BOT_TOKEN,
           text: 'I cannot do the requested task',
           channel: event.channel
@@ -70,7 +62,7 @@ slackEvents.on('app_mention', async (event) => {
   }
   
   if (text.includes('create channel')) {
-    webCllient.channels.create({
+    webClient.channels.create({
       name: 'random-test',
       token: process.env.BOT_TOKEN
     });
@@ -80,7 +72,7 @@ slackEvents.on('app_mention', async (event) => {
     const userTag = text.split(' ').pop();
     const userString = parseUserId(userTag!);
     console.log(userString)
-    webCllient.channels.invite({
+    webClient.channels.invite({
       channel,
       user: userString
     })
@@ -91,7 +83,7 @@ slackEvents.on('app_mention', async (event) => {
 server.use(slackEvents.expressMiddleware());
 server.use(express.json());
 
-webCllient.auth.test({
+webClient.auth.test({
   token: process.env.BOT_TOKEN
 }).then(data => {
   if(!data.ok) {
