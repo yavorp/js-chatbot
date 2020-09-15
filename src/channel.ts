@@ -1,4 +1,3 @@
-import { exception } from 'console';
 import { webClient, BOT_TOKEN } from './web-client';
 
 export interface Channel {
@@ -45,6 +44,17 @@ async function getAllActiveChannels() {
 }
 
 
-export function archiveChannel() {
-
+export async function archiveChannel(channelName: string ) {
+  const channels = await getAllActiveChannels();
+  const channel = channels.find(ch => ch.name === channelName);
+  if(!channelName) {
+    throw new Error('You try to archive not existing channel');
+  }
+  
+  if (channel) {
+    const res = webClient.conversations.archive({
+      token: BOT_TOKEN,
+      channel: channel?.id
+    });
+  }
 }
